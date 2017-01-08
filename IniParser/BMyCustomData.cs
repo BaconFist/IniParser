@@ -90,111 +90,131 @@ namespace IniParser
 
         private class Serializer
         {
+            private System.Text.RegularExpressions.Regex RgxKeyValuePair = new System.Text.RegularExpressions.Regex(@"^[^=]+[=][\S\s]*$");
+            private System.Text.RegularExpressions.Regex RgxSection = new System.Text.RegularExpressions.Regex(@"^\[[^\]]+\]\s*$");
+            private System.Text.RegularExpressions.Regex RgxEncapsulated = new System.Text.RegularExpressions.Regex(@"^""[\S\s]*""");
+
             public string serialize(Dictionary<string, Dictionary<string, string>> Data)
             {
-                StringBuilder SerializedData = new StringBuilder();
-                foreach (KeyValuePair<string, Dictionary<string, string>> Section in Data)
+                StringBuilder Buffer = new StringBuilder();
+                foreach(KeyValuePair<string, Dictionary<string,string>> Section in Data)
                 {
                     if (Section.Value.Count > 0)
                     {
-                        SerializedData.AppendLine(string.Format(@"[{0}]", Section.Key));
-                        foreach (KeyValuePair<string, string> keyValueBuff in Section.Value)
+                        Buffer.AppendLine("["+Section.Key+"]");
+                        foreach (KeyValuePair<string, string> KVP in Section.Value)
                         {
-                            if (keyValueBuff.Value.EndsWith(" "))
+                            string[] lines = KVP.Value.Replace("\r\n", "\n").Split(new Char[] { '\n' });
+                            if(lines.Length > 1)
                             {
-                                SerializedData.AppendLine(string.Format(@"{0}=""{1}""", keyValueBuff.Key, keyValueBuff.Value));
-                            }
-                            else
+                                for(int i = 0; i < lines.Length; i++)
+                                {
+                                    if (i == 0)
+                                    {
+                                        Buffer.AppendLine(KVP.Key + "=" + serializedValue(lines[i]));
+                                    } else
+                                    {
+                                        Buffer.AppendLine("=" + serializedValue(lines[i]));
+                                    }
+                                }
+                            } else
                             {
-                                SerializedData.AppendLine(string.Format(@"{0}={1}", keyValueBuff.Key, keyValueBuff.Value.Trim()));
+                                Buffer.AppendLine(KVP.Key + "=" + serializedValue(KVP.Value));
                             }
                         }
                     }
                 }
-                return SerializedData.ToString();
+                return Buffer.ToString();
+            }
+
+            public string serializedValue(string value)
+            {
+                if(value.StartsWith(" ") || value.EndsWith(" "))
+                {
+                    return "\"" + value + "\"";
+                } else
+                {
+                    return value;
+                }
             }
 
             public Dictionary<string, Dictionary<string, string>> deserialize(string[] sourceRaw)
             {
-                Dictionary<string, Dictionary<string, string>> DeserialzedData = new Dictionary<string, Dictionary<string, string>>();
+                Dictionary<string, Dictionary<string, string>> Data = new Dictionary<string, Dictionary<string, string>>();
                 string currentSection = null;
+                string key = null;
                 foreach (string line in sourceRaw)
                 {
-                    if (isComment(line))
-                    {
-                        continue;
-                    }
-                    else if (isSection(line))
+                    if (isSection(line))
                     {
                         currentSection = getSectionName(line);
-                    }
-                    else if (currentSection != null && isKeyValuePair(line))
-                    {
-                        string keyBuffer = "";
-                        string valueBuffer = "";
-                        if (TryGetKeyValuePair(line, out keyBuffer, out valueBuffer))
+                        if (!Data.ContainsKey(currentSection))
                         {
-                            if (!DeserialzedData.ContainsKey(currentSection))
+                            Data.Add(currentSection, new Dictionary<string, string>());
+                        }
+                        key = null;
+                    } else if(currentSection != null) {
+                        string val = null;
+                        if (isKeyValuePair(line))
+                        {
+                            int i_seperator = line.IndexOf('=');
+                            if(i_seperator != -1)
                             {
-                                DeserialzedData.Add(currentSection, new Dictionary<string, string>());
+                                key = line.Substring(0, i_seperator).Trim();
+                                val = line.Substring(i_seperator + 1).Trim();
+                                if (RgxEncapsulated.IsMatch(val))
+                                {
+                                    val = val.Substring(1, val.Length - 2);
+                                }
+                                if (!Data[currentSection].ContainsKey(key))
+                                {
+                                    Data[currentSection].Add(key, val);
+                                } else
+                                {
+                                    Data[currentSection][key] = val;
+                                }
+                                
                             }
-                            if (DeserialzedData[currentSection].ContainsKey(keyBuffer))
+                        } else if (key != null && isSingleValue(line))
+                        {
+                            val = val.Substring(1).Trim();
+                            if (RgxEncapsulated.IsMatch(val))
                             {
-                                DeserialzedData[currentSection][keyBuffer] = DeserialzedData[currentSection][keyBuffer] + "\n" + valueBuffer;
+                                val = val.Substring(1, val.Length - 2);
                             }
-                            else
+                            if (Data[currentSection].ContainsKey(key))
                             {
-                                DeserialzedData[currentSection].Add(keyBuffer, valueBuffer);
+                                Data[currentSection][key] = Data[currentSection][key] + "\n" + val;
                             }
                         }
                     }
                 }
-
-                return DeserialzedData;
+                return Data;
             }
 
-            private bool TryGetKeyValuePair(string source, out string key, out string value)
+            private string getSectionName(string line)
             {
-                KeyValuePair<string, string> result = new KeyValuePair<string, string>(null, null);
-                string slug = source.Trim();
-                string[] data = slug.Split(new Char[] { '=' }, 2);
-                key = null;
-                value = null;
-                if (data.Length == 2)
-                {
-                    key = data[0];
-                    value = data[1].Trim();
-                    if (value.StartsWith("\""))
-                    {
-                        int lastIndexQuote = value.LastIndexOf('"');
-                        if (lastIndexQuote != -1)
-                        {
-                            value = value.Substring(1, lastIndexQuote-1);
-                        }
-                    }
-                    return true;
-                }
-                return false;
+                return line.Trim().TrimStart(new Char[] { '[' }).TrimEnd(new Char[] { ']' });
             }
 
-            private string getSectionName(string value)
+            private bool isSingleValue(string line)
             {
-                return value.Trim().TrimStart(new Char[] { '[' }).TrimEnd(new Char[] { ']' });
+                return line.StartsWith("=");
             }
 
-            private bool isKeyValuePair(string value)
+            private bool isKeyValuePair(string line)
             {
-                return (new System.Text.RegularExpressions.Regex(@"^[^=]+=[\S\s]*$")).IsMatch(value);
+                return RgxKeyValuePair.IsMatch(line);
             }
 
-            private bool isComment(string value)
+            private bool isComment(string line)
             {
-                return (new System.Text.RegularExpressions.Regex(@"^\s*;")).IsMatch(value);
+                return line.StartsWith(";");
             }
 
-            private bool isSection(string value)
+            private bool isSection(string line)
             {
-                return (new System.Text.RegularExpressions.Regex(@"^\s*\[[^\]]+\]\s*$")).IsMatch(value);
+                return RgxSection.IsMatch(line);
             }
         }
     }

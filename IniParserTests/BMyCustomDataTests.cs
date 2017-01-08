@@ -22,12 +22,30 @@ server=192.0.2.62
 port=143
 file=""payroll.dat""";
 
+        private string exampleIniMulitline = @";demo for list
+[Codes]
+script 1=class Foo {
+=""  public Foo(){""
+=""    // do stuff""
+=""  }""
+=""}""
+script 2=""    stuff in""
+=multiple lines";
+
         [TestMethod()]
         public void BMyCustomDataTest()
         {
             BMyCustomData Mock = new BMyCustomData("");
 
             Assert.IsInstanceOfType(Mock, typeof(BMyCustomData));
+
+            BMyCustomData MockC = new BMyCustomData(exampleIniMulitline);
+            Assert.IsTrue(MockC.hasSection("Codes"));
+            Assert.IsTrue(MockC.hasValue("Codes", "script 1"));
+            Assert.IsTrue(MockC.hasValue("Codes", "script 2"));
+            Assert.IsFalse(MockC.hasValue("Codes", ""));
+            Assert.AreEqual(@"class Foo {\n  public Foo(){\n    // do stuff\n  }}", MockC.getValue("Codes", "script 1"));
+            Assert.AreEqual(@"    stuff in\nmultiple lines", MockC.getValue("Codes", "script 2"));
         }
 
         [TestMethod()]
@@ -44,6 +62,8 @@ file=""payroll.dat""";
             MockB.addValue("Section A", "Key 2", "valueG");
             MockB.addValue("[foo]", "Bar", "baz");
             Assert.AreEqual("[Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=valueG\r\n", MockB.getSerialized());
+
+
         }
 
         [TestMethod()]
