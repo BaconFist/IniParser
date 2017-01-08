@@ -177,7 +177,7 @@ namespace IniParser
                             }
                         } else if (key != null && isSingleValue(line))
                         {
-                            val = val.Substring(1).Trim();
+                            val = line.Substring(1).Trim();
                             if (RgxEncapsulated.IsMatch(val))
                             {
                                 val = val.Substring(1, val.Length - 2);
