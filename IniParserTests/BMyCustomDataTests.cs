@@ -44,8 +44,8 @@ script 2=""    stuff in""
             Assert.IsTrue(MockC.hasValue("Codes", "script 1"));
             Assert.IsTrue(MockC.hasValue("Codes", "script 2"));
             Assert.IsFalse(MockC.hasValue("Codes", ""));
-            Assert.AreEqual(@"class Foo {\n  public Foo(){\n    // do stuff\n  }}", MockC.getValue("Codes", "script 1"));
-            Assert.AreEqual(@"    stuff in\nmultiple lines", MockC.getValue("Codes", "script 2"));
+            Assert.AreEqual("class Foo {\n  public Foo(){\n    // do stuff\n  }\n}", MockC.getValue("Codes", "script 1"));
+            Assert.AreEqual("    stuff in\nmultiple lines", MockC.getValue("Codes", "script 2"));
         }
 
         [TestMethod()]
