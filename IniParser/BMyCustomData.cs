@@ -9,9 +9,11 @@ namespace IniParser
     public class BMyCustomData
     {
         private Dictionary<string, Dictionary<string, string>> Data;
+        private string currentNamespace = null;
 
-        public BMyCustomData(string data)
+        public BMyCustomData(string data, string currentNamespace)
         {
+            this.currentNamespace = currentNamespace;
             Data = (new Serializer()).deserialize(data.Split(new Char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries));
         }
 
@@ -25,11 +27,16 @@ namespace IniParser
             return Data.Count;
         }
 
+        private string getWithNamespace(string section)
+        {
+            return currentNamespace + "." + section;
+        }
+
         public int CountValues(string section)
         {
             if (hasSection(section))
             {
-                return Data[section].Count;
+                return Data[getWithNamespace(section)].Count;
             }
             else
             {
@@ -39,17 +46,17 @@ namespace IniParser
 
         public bool hasSection(string section)
         {
-            return Data.ContainsKey(section);
+            return Data.ContainsKey(getWithNamespace(section));
         }
 
         public bool hasValue(string section, string key)
         {
-            return hasSection(section) && Data[section].ContainsKey(key);
+            return hasSection(section) && Data[getWithNamespace(section)].ContainsKey(key);
         }
 
         public string getValue(string section, string key)
         {
-            return hasValue(section, key) ? Data[section][key] : null;
+            return hasValue(section, key) ? Data[getWithNamespace(section)][key] : null;
         }
 
         public bool addValue(string section, string key, string value)
@@ -60,11 +67,11 @@ namespace IniParser
             }
             if (hasValue(section, key))
             {
-                Data[section][key] = value;
+                Data[getWithNamespace(section)][key] = value;
             }
             else
             {
-                Data[section].Add(key, value);
+                Data[getWithNamespace(section)].Add(key, value);
             }
 
             return hasValue(section, key);
@@ -76,7 +83,7 @@ namespace IniParser
             {
                 if (!hasSection(section))
                 {
-                    Data.Add(section, new Dictionary<string, string>());
+                    Data.Add(getWithNamespace(section), new Dictionary<string, string>());
                 }
             }
 
@@ -85,7 +92,7 @@ namespace IniParser
 
         public Dictionary<string, string> getSection(string section)
         {
-            return hasSection(section) ? Data[section] : null;
+            return hasSection(section) ? Data[getWithNamespace(section)] : null;
         }
 
         private class Serializer
@@ -101,7 +108,7 @@ namespace IniParser
                 {
                     if (Section.Value.Count > 0)
                     {
-                        Buffer.AppendLine("["+Section.Key+"]");
+                        Buffer.AppendLine("["+ Section.Key + "]");
                         foreach (KeyValuePair<string, string> KVP in Section.Value)
                         {
                             string[] lines = KVP.Value.Replace("\r\n", "\n").Split(new Char[] { '\n' });
