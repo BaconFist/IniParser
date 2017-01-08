@@ -36,8 +36,14 @@ file=""payroll.dat""";
             BMyCustomData Mock = new BMyCustomData("");
             Mock.addValue("Section1", "Key1", "Value1");
             Mock.addValue("Section1", "Key2", "Value2");
-            string testData = Mock.getSerialized();
-            Assert.AreEqual("[Section1]\r\nKey1=Value1\r\nKey2=Value2\r\n", testData);
+            Assert.AreEqual("[Section1]\r\nKey1=Value1\r\nKey2=Value2\r\n", Mock.getSerialized());
+
+            BMyCustomData MockB = new BMyCustomData("");
+            MockB.addValue("Section A", "Key 1", "value 1");
+            MockB.addValue("Section A", "Key 1", "value 2  ");
+            MockB.addValue("Section A", "Key 2", "valueG");
+            MockB.addValue("[foo]", "Bar", "baz");
+            Assert.AreEqual("[Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=valueG\r\n", MockB.getSerialized());
         }
 
         [TestMethod()]
