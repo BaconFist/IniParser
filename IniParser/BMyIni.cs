@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace IniParser
 {
-    public class BMyCustomData
+    public class BMyIni
     {
         private Dictionary<string, Dictionary<string, string>> Data;
         private string currentNamespace = null;
 
-        public BMyCustomData(string data, string currentNamespace)
+        public BMyIni(string data, string currentNamespace)
         {
             this.currentNamespace = currentNamespace;
             Data = (new Serializer()).deserialize(data.Split(new Char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries));

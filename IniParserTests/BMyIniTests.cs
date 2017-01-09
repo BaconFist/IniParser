@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace IniParser.Tests
 {
     [TestClass()]
-    public class BMyCustomDataTests
+    public class BMyIniTests
     {
         private string exampleINI = @"; last modified 1 April 2001 by John Doe
 [test.owner]
@@ -35,11 +35,11 @@ script 2=""    stuff in""
         [TestMethod()]
         public void BMyCustomDataTest()
         {
-            BMyCustomData Mock = new BMyCustomData("", "test");
+            BMyIni Mock = new BMyIni("", "test");
 
-            Assert.IsInstanceOfType(Mock, typeof(BMyCustomData));
+            Assert.IsInstanceOfType(Mock, typeof(BMyIni));
 
-            BMyCustomData MockC = new BMyCustomData(exampleIniMulitline, "test");
+            BMyIni MockC = new BMyIni(exampleIniMulitline, "test");
             Assert.IsTrue(MockC.hasSection("Codes"));
             Assert.IsTrue(MockC.hasValue("Codes", "script 1"));
             Assert.IsTrue(MockC.hasValue("Codes", "script 2"));
@@ -51,12 +51,12 @@ script 2=""    stuff in""
         [TestMethod()]
         public void getSerializedTest()
         {
-            BMyCustomData Mock = new BMyCustomData("", "test");
+            BMyIni Mock = new BMyIni("", "test");
             Mock.addValue("Section1", "Key1", "Value1");
             Mock.addValue("Section1", "Key2", "Value2");
             Assert.AreEqual("[test.Section1]\r\nKey1=Value1\r\nKey2=Value2\r\n", Mock.getSerialized());
 
-            BMyCustomData MockB = new BMyCustomData("", "test");
+            BMyIni MockB = new BMyIni("", "test");
             MockB.addValue("Section A", "Key 1", "value 1");
             MockB.addValue("Section A", "Key 1", "value 2  ");
             MockB.addValue("Section A", "Key 2", "valueG");
@@ -69,7 +69,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void CountSectionsTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.AreEqual(2, Mock.CountSections());
             Mock.addSection("Derp");
             Assert.AreEqual(3, Mock.CountSections());
@@ -78,7 +78,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void CountValuesTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.AreEqual(2, Mock.CountValues("owner"));
             Assert.AreEqual(3, Mock.CountValues("database"));
             Assert.AreEqual(0, Mock.CountValues("[owner]"));
@@ -87,7 +87,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void hasSectionTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.IsTrue(Mock.hasSection("owner"));
             Assert.IsTrue(Mock.hasSection("database"));
             Assert.IsFalse(Mock.hasSection("[owner]"));
@@ -99,7 +99,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void getValueTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.IsNotNull(Mock.getValue("owner", "name"));
             Assert.IsNotNull(Mock.getValue("owner", "organization"));
             Assert.IsNotNull(Mock.getValue("database", "server"));
@@ -120,7 +120,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void addValueTest()
         {
-            BMyCustomData Mock = new BMyCustomData("[Section1]", "test");
+            BMyIni Mock = new BMyIni("[Section1]", "test");
             Assert.IsTrue(Mock.addValue("Section1", "foo", "bar"));
             Assert.IsTrue(Mock.addValue("Section2", "foo", "bar"));
             Assert.IsFalse(Mock.addValue("[Section3]", "foo", "bar"));
@@ -129,7 +129,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void addSectionTest()
         {
-            BMyCustomData Mock = new BMyCustomData("", "test");
+            BMyIni Mock = new BMyIni("", "test");
             Assert.IsTrue(Mock.addSection("Derp"));
             Assert.IsFalse(Mock.addSection("[dulli]"));
         }
@@ -137,7 +137,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void getSectionTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.IsNotNull(Mock.getSection("owner"));
             Assert.IsNotNull(Mock.getSection("database"));
             Assert.IsNull(Mock.getSection("[owner]"));
@@ -148,7 +148,7 @@ script 2=""    stuff in""
         [TestMethod()]
         public void hasValueTest()
         {
-            BMyCustomData Mock = new BMyCustomData(exampleINI, "test");
+            BMyIni Mock = new BMyIni(exampleINI, "test");
             Assert.IsTrue(Mock.hasValue("owner", "name"));
             Assert.IsTrue(Mock.hasValue("owner", "organization"));
             Assert.IsTrue(Mock.hasValue("database", "server"));
