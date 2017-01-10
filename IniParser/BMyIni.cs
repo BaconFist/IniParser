@@ -12,27 +12,64 @@ namespace IniParser
         private string currentNamespace = null;
         private string[] diff = null;
 
+        /// <summary>
+        /// change namespace
+        /// </summary>
+        public string Namespace
+        {
+            get { return currentNamespace;  }
+            set { currentNamespace = value.Trim(); }
+        }
+
+        /// <summary>
+        /// create values from INI Formatted data
+        /// </summary>
+        /// <param name="data">serialized data with INI sutff in it.</param>
+        /// <param name="currentNamespace">namespace to be used (can be changed by Namespace property at any time)</param>
         public BMyIni(string data, string currentNamespace)
         {
-            this.currentNamespace = currentNamespace;
+            Namespace = currentNamespace;
             Data = (new Serializer()).deserialize(data, out diff);
         }
 
+        /// <summary>
+        /// serialized data with setting in INI-Format (includes former comments and all unknown stuff that could be parsed in the first place
+        /// </summary>
+        /// <returns>string</returns>
         public string getSerialized()
         {
             return (new Serializer()).serialize(Data, diff);
         }
 
+
+        /// <summary>
+        /// adds namespace prefix to a sectoinname
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns>full qualified section</returns>
         private string normalizeSection(string section)
         {
             return currentNamespace + "." + section;
         }
         
+        /// <summary>
+        /// get value for given properties
+        /// </summary>
+        /// <param name="section">section without namespace</param>
+        /// <param name="key"></param>
+        /// <returns>(string)value or null if not found</returns>
         public string read(string section, string key)
         {
             return (Data.ContainsKey(normalizeSection(section)) && Data[normalizeSection(section)].ContainsKey(key)) ? Data[normalizeSection(section)][key] : null;
         }
 
+        /// <summary>
+        /// add new value or update existing one
+        /// </summary>
+        /// <param name="section"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns>true on successs</returns>
         public bool write(string section, string key, string value)
         {
             if(-1 != section.IndexOfAny(new Char[] { '[', ']' }))
@@ -55,6 +92,11 @@ namespace IniParser
             return Data[normalizeSection(section)].ContainsKey(key);
         }
 
+        /// <summary>
+        /// get all values from a section
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns></returns>
         public Dictionary<string, string> getSection(string section)
         {
             return Data.ContainsKey(normalizeSection(section)) ? Data[normalizeSection(section)] : null;
