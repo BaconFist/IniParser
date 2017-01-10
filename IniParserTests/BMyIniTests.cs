@@ -90,5 +90,18 @@ script 2=""    stuff in""
             Assert.IsTrue(Mock.write("Section2", "foo", "bar"));
             Assert.IsFalse(Mock.write("[Section3]", "foo", "bar"));
         }
+
+        [TestMethod()]
+        public void removeTest()
+        {
+            BMyIni Mock = new BMyIni(exampleINI, "test");
+            Assert.IsTrue(Mock.remove("owner","name"));
+            Assert.IsFalse(Mock.remove("owner", "street"));
+            Assert.IsFalse(Mock.remove("owner", "street"));
+            Assert.IsFalse(Mock.remove("derp", "name"));
+
+            Assert.IsTrue(Mock.remove("owner"));
+            Assert.IsNull(Mock.getSection("owner"));
+        }
     }
 }

@@ -93,6 +93,53 @@ namespace IniParser
         }
 
         /// <summary>
+        /// remove key from a section
+        /// </summary>
+        /// <param name="section"></param>
+        /// <param name="key"></param>
+        /// <returns>bool on success</returns>
+        public bool remove(string section, string key)
+        {
+            if (-1 != section.IndexOfAny(new Char[] { '[', ']' }))
+            {
+                return false;
+            }
+            string FQSection = normalizeSection(section);
+            if(Data.ContainsKey(FQSection) && Data[FQSection].ContainsKey(key))
+            {
+                Data[FQSection].Remove(key);
+                return !Data[FQSection].ContainsKey(key);
+            } else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// remove a complete sectoin
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns>true on success</returns>
+        public bool remove(string section)
+        {
+            if (-1 != section.IndexOfAny(new Char[] { '[', ']' }))
+            {
+                return false;
+            }
+            string FQSection = normalizeSection(section);
+            if (Data.ContainsKey(FQSection))
+            {
+                Data.Remove(FQSection);
+                return !Data.ContainsKey(FQSection);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
+
+        /// <summary>
         /// get all values from a section
         /// </summary>
         /// <param name="section"></param>
