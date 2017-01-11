@@ -154,7 +154,7 @@ namespace IniParser
             private System.Text.RegularExpressions.Regex RgxKeyValuePair = new System.Text.RegularExpressions.Regex(@"^[^=]+[=][\S\s]*$");
             private System.Text.RegularExpressions.Regex RgxSection = new System.Text.RegularExpressions.Regex(@"^\[[^\]]+\]\s*$");
             private System.Text.RegularExpressions.Regex RgxEncapsulated = new System.Text.RegularExpressions.Regex(@"^""[\S\s]*""");
-            private System.Text.RegularExpressions.Regex RgxDiffMarker = new System.Text.RegularExpressions.Regex(@"^--@@@SECTION::[^\[\]]+@@@$");
+            private System.Text.RegularExpressions.Regex RgxDiffMarker = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::[^\[\]]+@@@$");
 
             public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
             {
@@ -163,7 +163,7 @@ namespace IniParser
                 {
                     if (RgxDiffMarker.IsMatch(diffLine))
                     {
-                        string section = diffLine.Substring(14, diffLine.Length - 17);
+                        string section = diffLine.Substring(15, diffLine.Length - 18);
                         if (Data.ContainsKey(section))
                         {
                             Buffer.AppendLine(string.Format(@"[{0}]",section));
