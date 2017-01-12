@@ -32,6 +32,17 @@ script 1=class Foo {
 script 2=""    stuff in""
 =multiple lines";
 
+        private string exampleINIStuff = @"
+; Comment. Beginning of INI file
+ 
+; empty lines are ignored
+ 
+[test.General]
+; This starts a General section
+Compiler=FreePascal
+; Key Compiler and value FreePascal
+";
+
         [TestMethod()]
         public void BMyCustomDataTest()
         {
@@ -59,6 +70,11 @@ script 2=""    stuff in""
             MockB.write("Section A", "Key 2", "valueG");
             MockB.write("[foo]", "Bar", "baz");
             Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"\r\n", MockB.getSerialized());
+
+            BMyIni MockC = new BMyIni(exampleINIStuff, "test");
+            string actual = MockC.getSerialized();
+            Assert.AreEqual(exampleINIStuff, actual);
+            
         }
 
         [TestMethod()]

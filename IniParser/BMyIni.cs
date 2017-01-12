@@ -149,64 +149,20 @@ namespace IniParser
             return Data.ContainsKey(normalizeSection(section)) ? Data[normalizeSection(section)] : null;
         }
 
+
+
         private class Serializer
         {
             private System.Text.RegularExpressions.Regex RgxKeyValuePair = new System.Text.RegularExpressions.Regex(@"^[^=]+[=][\S\s]*$");
             private System.Text.RegularExpressions.Regex RgxSection = new System.Text.RegularExpressions.Regex(@"^\[[^\]]+\]\s*$");
             private System.Text.RegularExpressions.Regex RgxEncapsulated = new System.Text.RegularExpressions.Regex(@"^""[\S\s]*""");
-            private System.Text.RegularExpressions.Regex RgxDiffMarker = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::[^\[\]]+@@@$");
+            private System.Text.RegularExpressions.Regex RgxDiffMarkerSection = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::[^\[\]]+@@@$");
+            private System.Text.RegularExpressions.Regex RgxDiffMarkerKey = new System.Text.RegularExpressions.Regex(@"^---@@@KEY::[^=]+@@@$");
 
             public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
             {
+                throw new NotImplementedException();
                 StringBuilder Buffer = new StringBuilder();
-                foreach(string diffLine in diff)
-                {
-                    if (RgxDiffMarker.IsMatch(diffLine))
-                    {
-                        string section = diffLine.Substring(15, diffLine.Length - 18);
-                        if (Data.ContainsKey(section))
-                        {
-                            Buffer.AppendLine(string.Format(@"[{0}]",section));
-                            foreach(KeyValuePair<string,string> keyvalue in Data[section])
-                            {
-                                string[] valueLines = keyvalue.Value.Split(new Char[] { '\n', '\r' });
-                                for(int i = 0; i < valueLines.Length; i++)
-                                {
-                                    if (i == 0)
-                                    {
-                                        Buffer.AppendLine(string.Format("{0}=\"{1}\"", keyvalue.Key, valueLines[i]));
-                                    } else
-                                    {
-                                        Buffer.AppendLine(string.Format("=\"{0}\"", valueLines[i]));
-                                    }
-                                }
-                            }
-                            Data.Remove(section);
-                        }
-                    } else
-                    {
-                        Buffer.AppendLine(diffLine);
-                    }
-                }
-                foreach(KeyValuePair<string, Dictionary<string,string>> section in Data)
-                {
-                    Buffer.AppendLine(string.Format(@"[{0}]", section.Key));
-                    foreach (KeyValuePair<string, string> keyvalue in section.Value)
-                    {
-                        string[] valueLines = keyvalue.Value.Split(new Char[] { '\n', '\r' });
-                        for (int i = 0; i < valueLines.Length; i++)
-                        {
-                            if (i == 0)
-                            {
-                                Buffer.AppendLine(string.Format("{0}=\"{1}\"", keyvalue.Key, valueLines[i]));
-                            }
-                            else
-                            {
-                                Buffer.AppendLine(string.Format("=\"{0}\"", valueLines[i]));
-                            }
-                        }
-                    }
-                }
                 return Buffer.ToString();
             }
 
