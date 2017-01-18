@@ -132,6 +132,7 @@ namespace IniParser
         /// <returns>true on success</returns>
         public bool Remove(string section)
         {
+            // section must not contain square brakets
             if (-1 != section.IndexOfAny(new Char[] { '[', ']' }))
             {
                 return false;
@@ -170,10 +171,13 @@ namespace IniParser
             private System.Text.RegularExpressions.Regex RgxDiffMarkerSection = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::([^\[\]]+)@@@$");
             private System.Text.RegularExpressions.Regex RgxDiffMarkerKey = new System.Text.RegularExpressions.Regex(@"^---@@@KEY::\[([^\[\]]+)\]([^=]+)@@@$");
 
+
+            //i'm so sick of this linebreak stuff. 
             const string LINEBREAK = "\r\n";
 
             public string serialize(Dictionary<string,Dictionary<string,string>> UnserializedData, string[] MarkedIniData)
             {
+                //this is the new stuff
                 List<string> SerializedDataBuffer = new List<string>();
                 string currentSection = null;
                 foreach(string originLine in MarkedIniData)
