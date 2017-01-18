@@ -114,7 +114,7 @@ Compiler=FreePascal
             Assert.IsFalse(Mock.Remove("owner", "street"));
             Assert.IsFalse(Mock.Remove("derp", "name"));
 
-            Assert.IsTrue(Mock.remove("owner"));
+            Assert.IsTrue(Mock.Remove("owner"));
             Assert.IsNull(Mock.getSection("owner"));
         }
     }

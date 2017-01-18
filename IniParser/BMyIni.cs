@@ -125,7 +125,7 @@ namespace IniParser
         /// </summary>
         /// <param name="section"></param>
         /// <returns>true on success</returns>
-        public bool remove(string section)
+        public bool Remove(string section)
         {
             if (-1 != section.IndexOfAny(new Char[] { '[', ']' }))
             {
