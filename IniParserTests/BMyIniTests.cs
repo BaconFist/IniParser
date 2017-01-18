@@ -50,8 +50,8 @@ Compiler=FreePascal
             Assert.IsInstanceOfType(Mock, typeof(BMyIni));
 
             BMyIni MockC = new BMyIni(exampleIniMulitline, "test");
-            Assert.AreEqual("class Foo {\n  public Foo(){\n    // do stuff\n  }\n}", MockC.read("Codes", "script 1"));
-            Assert.AreEqual("    stuff in\nmultiple lines", MockC.read("Codes", "script 2"));
+            Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockC.read("Codes", "script 1"));
+            Assert.AreEqual("    stuff in\r\nmultiple lines", MockC.read("Codes", "script 2"));
         }
 
         [TestMethod()]
@@ -60,7 +60,7 @@ Compiler=FreePascal
             BMyIni Mock = new BMyIni("", "test");
             Mock.write("Section1", "Key1", "Value1");
             Mock.write("Section1", "Key2", "Value2");
-            Assert.AreEqual("[test.Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"\r\n", Mock.getSerialized());
+            Assert.AreEqual("[test.Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"", Mock.getSerialized());
 
             BMyIni MockB = new BMyIni("", "test");
             MockB.getSerialized();
@@ -68,11 +68,10 @@ Compiler=FreePascal
             MockB.write("Section A", "Key 1", "value 2  ");
             MockB.write("Section A", "Key 2", "valueG");
             MockB.write("[foo]", "Bar", "baz");
-            Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"\r\n", MockB.getSerialized());
+            Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"", MockB.getSerialized());
 
             BMyIni MockC = new BMyIni(exampleINIStuff, "test");
-            string actual = MockC.getSerialized();
-            Assert.AreEqual(exampleINIStuff, actual);
+            Assert.AreEqual(exampleINIStuff, MockC.getSerialized());
             
         }
 

@@ -159,10 +159,12 @@ namespace IniParser
             private System.Text.RegularExpressions.Regex RgxDiffMarkerSection = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::([^\[\]]+)@@@$");
             private System.Text.RegularExpressions.Regex RgxDiffMarkerKey = new System.Text.RegularExpressions.Regex(@"^---@@@KEY::\[([^\[\]]+)\]([^=]+)@@@$");
 
+            const string LINEBREAK = "\r\n";
+
             public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
             {
                 //throw new NotImplementedException();
-                StringBuilder Buffer = new StringBuilder();
+                List<string> Buffer = new List<string>();
                 string section = null;
                 foreach(string line in diff)
                 {
@@ -175,7 +177,7 @@ namespace IniParser
                             {
                                 foreach(KeyValuePair<string, string> key in Data[section])
                                 {
-                                    Buffer.AppendLine(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
+                                    Buffer.Add(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
                                 }
                                 Data.Remove(section);
                             }
@@ -183,7 +185,7 @@ namespace IniParser
                         section = buff_section;
                         if (Data.ContainsKey(section))
                         {
-                            Buffer.AppendLine(string.Format(@"[{0}]", section));
+                            Buffer.Add(string.Format(@"[{0}]", section));
                         }
                     } else if (RgxDiffMarkerKey.IsMatch(line))
                     {
@@ -193,7 +195,7 @@ namespace IniParser
                         if (tmp_section.Equals(section) && Data.ContainsKey(tmp_section) && Data[tmp_section].ContainsKey(key))
                         {
                             string value = Data[tmp_section][key];
-                            Buffer.AppendLine(string.Format(@"{0}={1}", key, encapsulate(value)));
+                            Buffer.Add(string.Format(@"{0}={1}", key, encapsulate(value)));
                             Data[tmp_section].Remove(key);
                             if(Data[tmp_section].Count <= 0)
                             {
@@ -202,25 +204,25 @@ namespace IniParser
                         }
                     } else
                     {
-                        Buffer.AppendLine(line);
+                        Buffer.Add(line);
                     }
                 }  
                         
                 foreach(KeyValuePair<string, Dictionary<string,string>> Section in Data)
                 {
-                    Buffer.AppendLine(string.Format(@"[{0}]", Section.Key));
+                    Buffer.Add(string.Format(@"[{0}]", Section.Key));
                     foreach (KeyValuePair<string,string> kvp in Section.Value)
                     {
-                        Buffer.AppendLine(string.Format(@"{0}=""{1}""", kvp.Key, kvp.Value));
+                        Buffer.Add(string.Format(@"{0}=""{1}""", kvp.Key, kvp.Value));
                     }
-                }     
-                return Buffer.ToString();
+                }
+                return string.Join(LINEBREAK, Buffer.ToArray());
             }
 
             public Dictionary<string, Dictionary<string, string>> deserialize(string serialized, out string[] diff)
             {
-                string[] linesSource = serialized.Split(new Char[] {'\n','\r'}, StringSplitOptions.RemoveEmptyEntries);
-                StringBuilder serializedBuffer = new StringBuilder();
+                string[] linesSource = (serialized.Trim().Length == 0)?new string[] { } : serialized.Split(new string[] { LINEBREAK }, StringSplitOptions.None);
+                List<string> serializedBuffer = new List<string>();
                 string section = null;
                 string key = null;
                 Dictionary<string, Dictionary<string, string>> Data = new Dictionary<string, Dictionary<string, string>>();
@@ -235,7 +237,7 @@ namespace IniParser
                         {
                             Data.Add(section, new Dictionary<string, string>());
                         }
-                        serializedBuffer.AppendLine(getDiffMarkerSection(section));
+                        serializedBuffer.Add(getDiffMarkerSection(section));
                     } else if (section != null 
                         && Data.ContainsKey(section) 
                         && isKeyValuePair(currentLine))
@@ -252,7 +254,7 @@ namespace IniParser
                         {
                             Data[section].Add(key,val);
                         }
-                        serializedBuffer.AppendLine(getDiffMarkerKey(section,key));
+                        serializedBuffer.Add(getDiffMarkerKey(section,key));
                     }
                     else if (section != null 
                         && Data.ContainsKey(section) 
@@ -262,14 +264,14 @@ namespace IniParser
                     {
                         //add line to last key
                         string val = getEncapsulated(currentLine.Trim().Substring(1));
-                        Data[section][key] = Data[section][key] + "\n" + val;
+                        Data[section][key] = Data[section][key] + LINEBREAK + val;
                     }
                     else
                     {
-                        serializedBuffer.AppendLine(currentLine);
+                        serializedBuffer.Add(currentLine);
                     }
                 }
-                diff = serializedBuffer.ToString().Split(new Char[] {'\n','\r'}, StringSplitOptions.RemoveEmptyEntries);
+                diff = serializedBuffer.ToArray();
                 return Data;
             }
 
