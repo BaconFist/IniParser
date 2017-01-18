@@ -156,13 +156,64 @@ namespace IniParser
             private System.Text.RegularExpressions.Regex RgxKeyValuePair = new System.Text.RegularExpressions.Regex(@"^[^=]+[=][\S\s]*$");
             private System.Text.RegularExpressions.Regex RgxSection = new System.Text.RegularExpressions.Regex(@"^\[[^\]]+\]\s*$");
             private System.Text.RegularExpressions.Regex RgxEncapsulated = new System.Text.RegularExpressions.Regex(@"^""[\S\s]*""");
-            private System.Text.RegularExpressions.Regex RgxDiffMarkerSection = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::[^\[\]]+@@@$");
-            private System.Text.RegularExpressions.Regex RgxDiffMarkerKey = new System.Text.RegularExpressions.Regex(@"^---@@@KEY::[^=]+@@@$");
+            private System.Text.RegularExpressions.Regex RgxDiffMarkerSection = new System.Text.RegularExpressions.Regex(@"^---@@@SECTION::([^\[\]]+)@@@$");
+            private System.Text.RegularExpressions.Regex RgxDiffMarkerKey = new System.Text.RegularExpressions.Regex(@"^---@@@KEY::\[([^\[\]]+)\]([^=]+)@@@$");
 
             public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
             {
-                throw new NotImplementedException();
+                //throw new NotImplementedException();
                 StringBuilder Buffer = new StringBuilder();
+                string section = null;
+                foreach(string line in diff)
+                {
+                    if (RgxDiffMarkerSection.IsMatch(line))
+                    {
+                        string buff_section = RgxDiffMarkerSection.Match(line).Groups[1].Value;
+                        if (section != null && !buff_section.Equals(section))
+                        {
+                            if(Data.ContainsKey(section) && Data[section].Count > 0)
+                            {
+                                foreach(KeyValuePair<string, string> key in Data[section])
+                                {
+                                    Buffer.AppendLine(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
+                                }
+                                Data.Remove(section);
+                            }
+                        }
+                        section = buff_section;
+                        if (Data.ContainsKey(section))
+                        {
+                            Buffer.AppendLine(string.Format(@"[{0}]", section));
+                        }
+                    } else if (RgxDiffMarkerKey.IsMatch(line))
+                    {
+                        string tmp_section = RgxDiffMarkerKey.Match(line).Groups[1].Value;
+                        string key = RgxDiffMarkerKey.Match(line).Groups[2].Value;
+
+                        if (tmp_section.Equals(section) && Data.ContainsKey(tmp_section) && Data[tmp_section].ContainsKey(key))
+                        {
+                            string value = Data[tmp_section][key];
+                            Buffer.AppendLine(string.Format(@"{0}={1}", key, encapsulate(value)));
+                            Data[tmp_section].Remove(key);
+                            if(Data[tmp_section].Count <= 0)
+                            {
+                                Data.Remove(tmp_section);
+                            }
+                        }
+                    } else
+                    {
+                        Buffer.AppendLine(line);
+                    }
+                }  
+                        
+                foreach(KeyValuePair<string, Dictionary<string,string>> Section in Data)
+                {
+                    Buffer.AppendLine(string.Format(@"[{0}]", Section.Key));
+                    foreach (KeyValuePair<string,string> kvp in Section.Value)
+                    {
+                        Buffer.AppendLine(string.Format(@"{0}=""{1}""", kvp.Key, kvp.Value));
+                    }
+                }     
                 return Buffer.ToString();
             }
 
@@ -184,7 +235,7 @@ namespace IniParser
                         {
                             Data.Add(section, new Dictionary<string, string>());
                         }
-                        serializedBuffer.AppendLine(getDiffMarker(section));
+                        serializedBuffer.AppendLine(getDiffMarkerSection(section));
                     } else if (section != null 
                         && Data.ContainsKey(section) 
                         && isKeyValuePair(currentLine))
@@ -201,6 +252,7 @@ namespace IniParser
                         {
                             Data[section].Add(key,val);
                         }
+                        serializedBuffer.AppendLine(getDiffMarkerKey(section,key));
                     }
                     else if (section != null 
                         && Data.ContainsKey(section) 
@@ -221,6 +273,17 @@ namespace IniParser
                 return Data;
             }
 
+            private string encapsulate(string raw)
+            {
+                if(raw.StartsWith(" ") || raw.EndsWith(" "))
+                {
+                    return "\"" + raw + "\"";
+                } else
+                {
+                    return raw;
+                }
+            }
+
             private string getEncapsulated(string val)
             {
                 if (RgxEncapsulated.IsMatch(val))
@@ -230,11 +293,14 @@ namespace IniParser
                 return val;
             }
 
-            private string getDiffMarker(string section)
+            private string getDiffMarkerSection(string section)
             {
                 return string.Format(@"---@@@SECTION::{0}@@@", section);
             }
-
+            private string getDiffMarkerKey(string section, string key)
+            {
+                return string.Format(@"---@@@KEY::[{0}]{1}@@@", section, key);
+            }
             private string getSectionName(string line)
             {
                 return line.Trim().TrimStart(new Char[] { '[' }).TrimEnd(new Char[] { ']' });

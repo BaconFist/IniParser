@@ -32,8 +32,7 @@ script 1=class Foo {
 script 2=""    stuff in""
 =multiple lines";
 
-        private string exampleINIStuff = @"
-; Comment. Beginning of INI file
+        private string exampleINIStuff = @"; Comment. Beginning of INI file
  
 ; empty lines are ignored
  
