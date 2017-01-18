@@ -8,33 +8,15 @@ namespace IniParser
 {
     public class BMyIni
     {
-        private Dictionary<string, Dictionary<string, string>> Data;
-        private string currentNamespace = null;
+        public Dictionary<string, Dictionary<string, string>> Data;
         private string[] MarkedIniData = null;
-
-        /// <summary>
-        /// change namespace
-        /// </summary>
-        public string Namespace
-        {
-            get { return currentNamespace;  }
-            set {
-                // namespace must not contain square brakets
-                if( -1 == value.IndexOfAny(new char[] { '[', ']' }))
-                {
-                    currentNamespace = value.Trim();
-                }                
-            }
-        }
 
         /// <summary>
         /// create values from INI Formatted data
         /// </summary>
         /// <param name="ini">serialized data with INI sutff in it.</param>
-        /// <param name="currentNamespace">namespace to be used (can be changed by Namespace property at any time)</param>
-        public BMyIni(string ini, string currentNamespace)
+        public BMyIni(string ini)
         {
-            Namespace = currentNamespace;
             Data = (new Serializer()).deserialize(ini, out MarkedIniData);
         }
 
@@ -46,17 +28,6 @@ namespace IniParser
         {
             return (new Serializer()).serialize(Data, MarkedIniData);
         }
-
-
-        /// <summary>
-        /// adds namespace prefix to a sectoinname
-        /// </summary>
-        /// <param name="rawSection"></param>
-        /// <returns>full qualified section</returns>
-        private string GetFullyQualifiedSection(string rawSection)
-        {
-            return currentNamespace + "." + rawSection;
-        }
         
         /// <summary>
         /// get value for given properties
@@ -66,7 +37,7 @@ namespace IniParser
         /// <returns>(string)value or null if not found</returns>
         public string Read(string section, string key)
         {
-            return (Data.ContainsKey(GetFullyQualifiedSection(section)) && Data[GetFullyQualifiedSection(section)].ContainsKey(key)) ? Data[GetFullyQualifiedSection(section)][key] : null;
+            return (Data.ContainsKey(section) && Data[section].ContainsKey(key)) ? Data[section][key] : null;
         }
 
         /// <summary>
@@ -84,21 +55,20 @@ namespace IniParser
                 return false;
             }
 
-            string fullyQualifiedSection = GetFullyQualifiedSection(section);
-            if (!Data.ContainsKey(fullyQualifiedSection))
+            if (!Data.ContainsKey(section))
             {
-                Data.Add(fullyQualifiedSection, new Dictionary<string, string>());
+                Data.Add(section, new Dictionary<string, string>());
             }
-            if (Data[fullyQualifiedSection].ContainsKey(key))
+            if (Data[section].ContainsKey(key))
             {
-                Data[fullyQualifiedSection][key] = value;
+                Data[section][key] = value;
             }
             else
             {
-                Data[fullyQualifiedSection].Add(key, value);
+                Data[section].Add(key, value);
             }
 
-            return Data[fullyQualifiedSection].ContainsKey(key);
+            return Data[section].ContainsKey(key);
         }
 
         /// <summary>
@@ -114,11 +84,10 @@ namespace IniParser
             {
                 return false;
             }
-            string fullyQualifiedSection = GetFullyQualifiedSection(section);
-            if(Data.ContainsKey(fullyQualifiedSection) && Data[fullyQualifiedSection].ContainsKey(key))
+            if(Data.ContainsKey(section) && Data[section].ContainsKey(key))
             {
-                Data[fullyQualifiedSection].Remove(key);
-                return !Data[fullyQualifiedSection].ContainsKey(key);
+                Data[section].Remove(key);
+                return !Data[section].ContainsKey(key);
             } else
             {
                 return false;
@@ -137,18 +106,16 @@ namespace IniParser
             {
                 return false;
             }
-            string fullyQualifiedSection = GetFullyQualifiedSection(section);
-            if (Data.ContainsKey(fullyQualifiedSection))
+            if (Data.ContainsKey(section))
             {
-                Data.Remove(fullyQualifiedSection);
-                return !Data.ContainsKey(fullyQualifiedSection);
+                Data.Remove(section);
+                return !Data.ContainsKey(section);
             }
             else
             {
                 return false;
             }
         }
-        
 
         /// <summary>
         /// get all values from a section
@@ -157,11 +124,8 @@ namespace IniParser
         /// <returns></returns>
         public Dictionary<string, string> getSection(string section)
         {
-            string fullyQualifiedSection = GetFullyQualifiedSection(section);
-            return Data.ContainsKey(fullyQualifiedSection) ? Data[fullyQualifiedSection] : null;
+            return Data.ContainsKey(section) ? Data[section] : null;
         }
-
-
 
         private class Serializer
         {

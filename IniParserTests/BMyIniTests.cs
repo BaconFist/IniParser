@@ -11,19 +11,19 @@ namespace IniParser.Tests
     [TestClass()]
     public class BMyIniTests
     {
-        private string exampleINI = @"; last modified 1 April 2001 by John Doe
-[test.owner]
+        private string testIni_1 = @"; last modified 1 April 2001 by John Doe
+[owner]
 name=John Doe
 organization=Acme Widgets Inc.
 
-[test.database]
+[database]
 ; use IP address in case network name resolution is not working
 server=192.0.2.62     
 port=143
 file=""payroll.dat""";
 
-        private string exampleIniMulitline = @";demo for list
-[test.Codes]
+        private string testIni_2 = @";demo for list
+[Codes]
 script 1=class Foo {
 =""  public Foo(){""
 =""    // do stuff""
@@ -32,24 +32,32 @@ script 1=class Foo {
 script 2=""    stuff in""
 =multiple lines";
 
-        private string exampleINIStuff = @"; Comment. Beginning of INI file
+        private string testIni_3 = @"; Comment. Beginning of INI file
  
 ; empty lines are ignored
  
-[test.General]
+[General]
 ; This starts a General section
 Compiler=FreePascal
 ; Key Compiler and value FreePascal
 ";
 
+        private string testIni_4 = @"[GLOBAL]
+pimmel
+like=stuff
+[MyAwesomeScript.test]
+lulilu
+key=value derp
+das tut nix";
+
         [TestMethod()]
         public void BMyCustomDataTest()
         {
-            BMyIni Mock = new BMyIni("", "test");
+            BMyIni Mock = new BMyIni("");
 
             Assert.IsInstanceOfType(Mock, typeof(BMyIni));
 
-            BMyIni MockC = new BMyIni(exampleIniMulitline, "test");
+            BMyIni MockC = new BMyIni(testIni_2);
             Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockC.Read("Codes", "script 1"));
             Assert.AreEqual("    stuff in\r\nmultiple lines", MockC.Read("Codes", "script 2"));
         }
@@ -57,28 +65,28 @@ Compiler=FreePascal
         [TestMethod()]
         public void getSerializedTest()
         {
-            BMyIni Mock = new BMyIni("", "test");
+            BMyIni Mock = new BMyIni("");
             Mock.Write("Section1", "Key1", "Value1");
             Mock.Write("Section1", "Key2", "Value2");
-            Assert.AreEqual("[test.Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"", Mock.GetSerialized());
+            Assert.AreEqual("[Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"", Mock.GetSerialized());
 
-            BMyIni MockB = new BMyIni("", "test");
+            BMyIni MockB = new BMyIni("");
             MockB.GetSerialized();
             MockB.Write("Section A", "Key 1", "value 1");
             MockB.Write("Section A", "Key 1", "value 2  ");
             MockB.Write("Section A", "Key 2", "valueG");
             MockB.Write("[foo]", "Bar", "baz");
-            Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"", MockB.GetSerialized());
+            Assert.AreEqual("[Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"", MockB.GetSerialized());
 
-            BMyIni MockC = new BMyIni(exampleINIStuff, "test");
-            Assert.AreEqual(exampleINIStuff, MockC.GetSerialized());
+            BMyIni MockC = new BMyIni(testIni_3);
+            Assert.AreEqual(testIni_3, MockC.GetSerialized());
             
         }
 
         [TestMethod()]
         public void readTest()
         {
-            BMyIni Mock = new BMyIni(exampleINI, "test");
+            BMyIni Mock = new BMyIni(testIni_1);
             Assert.IsNotNull(Mock.Read("owner", "name"));
             Assert.IsNotNull(Mock.Read("owner", "organization"));
             Assert.IsNotNull(Mock.Read("database", "server"));
@@ -99,7 +107,7 @@ Compiler=FreePascal
         [TestMethod()]
         public void writeTest()
         {
-            BMyIni Mock = new BMyIni("[Section1]", "test");
+            BMyIni Mock = new BMyIni("[Section1]");
             Assert.IsTrue(Mock.Write("Section1", "foo", "bar"));
             Assert.IsTrue(Mock.Write("Section2", "foo", "bar"));
             Assert.IsFalse(Mock.Write("[Section3]", "foo", "bar"));
@@ -108,7 +116,7 @@ Compiler=FreePascal
         [TestMethod()]
         public void removeTest()
         {
-            BMyIni Mock = new BMyIni(exampleINI, "test");
+            BMyIni Mock = new BMyIni(testIni_1);
             Assert.IsTrue(Mock.Remove("owner","name"));
             Assert.IsFalse(Mock.Remove("owner", "street"));
             Assert.IsFalse(Mock.Remove("owner", "street"));
