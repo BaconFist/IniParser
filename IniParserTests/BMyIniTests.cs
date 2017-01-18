@@ -109,10 +109,10 @@ Compiler=FreePascal
         public void removeTest()
         {
             BMyIni Mock = new BMyIni(exampleINI, "test");
-            Assert.IsTrue(Mock.remove("owner","name"));
-            Assert.IsFalse(Mock.remove("owner", "street"));
-            Assert.IsFalse(Mock.remove("owner", "street"));
-            Assert.IsFalse(Mock.remove("derp", "name"));
+            Assert.IsTrue(Mock.Remove("owner","name"));
+            Assert.IsFalse(Mock.Remove("owner", "street"));
+            Assert.IsFalse(Mock.Remove("owner", "street"));
+            Assert.IsFalse(Mock.Remove("derp", "name"));
 
             Assert.IsTrue(Mock.remove("owner"));
             Assert.IsNull(Mock.getSection("owner"));
