@@ -50,28 +50,28 @@ Compiler=FreePascal
             Assert.IsInstanceOfType(Mock, typeof(BMyIni));
 
             BMyIni MockC = new BMyIni(exampleIniMulitline, "test");
-            Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockC.read("Codes", "script 1"));
-            Assert.AreEqual("    stuff in\r\nmultiple lines", MockC.read("Codes", "script 2"));
+            Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockC.Read("Codes", "script 1"));
+            Assert.AreEqual("    stuff in\r\nmultiple lines", MockC.Read("Codes", "script 2"));
         }
 
         [TestMethod()]
         public void getSerializedTest()
         {
             BMyIni Mock = new BMyIni("", "test");
-            Mock.write("Section1", "Key1", "Value1");
-            Mock.write("Section1", "Key2", "Value2");
-            Assert.AreEqual("[test.Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"", Mock.getSerialized());
+            Mock.Write("Section1", "Key1", "Value1");
+            Mock.Write("Section1", "Key2", "Value2");
+            Assert.AreEqual("[test.Section1]\r\nKey1=\"Value1\"\r\nKey2=\"Value2\"", Mock.GetSerialized());
 
             BMyIni MockB = new BMyIni("", "test");
-            MockB.getSerialized();
-            MockB.write("Section A", "Key 1", "value 1");
-            MockB.write("Section A", "Key 1", "value 2  ");
-            MockB.write("Section A", "Key 2", "valueG");
-            MockB.write("[foo]", "Bar", "baz");
-            Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"", MockB.getSerialized());
+            MockB.GetSerialized();
+            MockB.Write("Section A", "Key 1", "value 1");
+            MockB.Write("Section A", "Key 1", "value 2  ");
+            MockB.Write("Section A", "Key 2", "valueG");
+            MockB.Write("[foo]", "Bar", "baz");
+            Assert.AreEqual("[test.Section A]\r\nKey 1=\"value 2  \"\r\nKey 2=\"valueG\"", MockB.GetSerialized());
 
             BMyIni MockC = new BMyIni(exampleINIStuff, "test");
-            Assert.AreEqual(exampleINIStuff, MockC.getSerialized());
+            Assert.AreEqual(exampleINIStuff, MockC.GetSerialized());
             
         }
 
@@ -79,30 +79,30 @@ Compiler=FreePascal
         public void readTest()
         {
             BMyIni Mock = new BMyIni(exampleINI, "test");
-            Assert.IsNotNull(Mock.read("owner", "name"));
-            Assert.IsNotNull(Mock.read("owner", "organization"));
-            Assert.IsNotNull(Mock.read("database", "server"));
-            Assert.IsNotNull(Mock.read("database", "port"));
-            Assert.IsNotNull(Mock.read("database", "file"));
-            Assert.AreEqual("John Doe", Mock.read("owner", "name"));
-            Assert.AreEqual("Acme Widgets Inc.", Mock.read("owner", "organization"));
-            Assert.AreEqual("192.0.2.62", Mock.read("database", "server"));
-            Assert.AreEqual("143", Mock.read("database", "port"));
-            Assert.AreEqual("payroll.dat", Mock.read("database", "file"));
-            Assert.IsNull(Mock.read("Foo", "Bar"));
-            Assert.IsNull(Mock.read("database", "name"));
-            Assert.IsNull(Mock.read("[owner]", "name"));
-            Assert.IsNull(Mock.read("[foo]", "port"));
-            Assert.IsNull(Mock.read("database", " file"));
+            Assert.IsNotNull(Mock.Read("owner", "name"));
+            Assert.IsNotNull(Mock.Read("owner", "organization"));
+            Assert.IsNotNull(Mock.Read("database", "server"));
+            Assert.IsNotNull(Mock.Read("database", "port"));
+            Assert.IsNotNull(Mock.Read("database", "file"));
+            Assert.AreEqual("John Doe", Mock.Read("owner", "name"));
+            Assert.AreEqual("Acme Widgets Inc.", Mock.Read("owner", "organization"));
+            Assert.AreEqual("192.0.2.62", Mock.Read("database", "server"));
+            Assert.AreEqual("143", Mock.Read("database", "port"));
+            Assert.AreEqual("payroll.dat", Mock.Read("database", "file"));
+            Assert.IsNull(Mock.Read("Foo", "Bar"));
+            Assert.IsNull(Mock.Read("database", "name"));
+            Assert.IsNull(Mock.Read("[owner]", "name"));
+            Assert.IsNull(Mock.Read("[foo]", "port"));
+            Assert.IsNull(Mock.Read("database", " file"));
         }
 
         [TestMethod()]
         public void writeTest()
         {
             BMyIni Mock = new BMyIni("[Section1]", "test");
-            Assert.IsTrue(Mock.write("Section1", "foo", "bar"));
-            Assert.IsTrue(Mock.write("Section2", "foo", "bar"));
-            Assert.IsFalse(Mock.write("[Section3]", "foo", "bar"));
+            Assert.IsTrue(Mock.Write("Section1", "foo", "bar"));
+            Assert.IsTrue(Mock.Write("Section2", "foo", "bar"));
+            Assert.IsFalse(Mock.Write("[Section3]", "foo", "bar"));
         }
 
         [TestMethod()]

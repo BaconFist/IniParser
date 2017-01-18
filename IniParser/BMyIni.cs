@@ -18,7 +18,12 @@ namespace IniParser
         public string Namespace
         {
             get { return currentNamespace;  }
-            set { currentNamespace = value.Trim(); }
+            set {
+                if( -1 == currentNamespace.IndexOfAny(new char[] { '[', ']' }))
+                {
+                    currentNamespace = value.Trim();
+                }                
+            }
         }
 
         /// <summary>
@@ -36,7 +41,7 @@ namespace IniParser
         /// serialized data with setting in INI-Format (includes former comments and all unknown stuff that could be parsed in the first place
         /// </summary>
         /// <returns>string</returns>
-        public string getSerialized()
+        public string GetSerialized()
         {
             return (new Serializer()).serialize(Data, diff);
         }
@@ -58,7 +63,7 @@ namespace IniParser
         /// <param name="section">section without namespace</param>
         /// <param name="key"></param>
         /// <returns>(string)value or null if not found</returns>
-        public string read(string section, string key)
+        public string Read(string section, string key)
         {
             return (Data.ContainsKey(normalizeSection(section)) && Data[normalizeSection(section)].ContainsKey(key)) ? Data[normalizeSection(section)][key] : null;
         }
@@ -70,7 +75,7 @@ namespace IniParser
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns>true on successs</returns>
-        public bool write(string section, string key, string value)
+        public bool Write(string section, string key, string value)
         {
             if(-1 != section.IndexOfAny(new Char[] { '[', ']' }))
             {
