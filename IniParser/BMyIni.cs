@@ -10,7 +10,7 @@ namespace IniParser
     {
         private Dictionary<string, Dictionary<string, string>> Data;
         private string currentNamespace = null;
-        private string[] diff = null;
+        private string[] MarkedIniData = null;
 
         /// <summary>
         /// change namespace
@@ -19,7 +19,8 @@ namespace IniParser
         {
             get { return currentNamespace;  }
             set {
-                if( -1 == currentNamespace.IndexOfAny(new char[] { '[', ']' }))
+                // namespace must not contain square brakets
+                if( -1 == value.IndexOfAny(new char[] { '[', ']' }))
                 {
                     currentNamespace = value.Trim();
                 }                
@@ -29,12 +30,12 @@ namespace IniParser
         /// <summary>
         /// create values from INI Formatted data
         /// </summary>
-        /// <param name="data">serialized data with INI sutff in it.</param>
+        /// <param name="ini">serialized data with INI sutff in it.</param>
         /// <param name="currentNamespace">namespace to be used (can be changed by Namespace property at any time)</param>
-        public BMyIni(string data, string currentNamespace)
+        public BMyIni(string ini, string currentNamespace)
         {
             Namespace = currentNamespace;
-            Data = (new Serializer()).deserialize(data, out diff);
+            Data = (new Serializer()).deserialize(ini, out MarkedIniData);
         }
 
         /// <summary>
@@ -43,18 +44,18 @@ namespace IniParser
         /// <returns>string</returns>
         public string GetSerialized()
         {
-            return (new Serializer()).serialize(Data, diff);
+            return (new Serializer()).serialize(Data, MarkedIniData);
         }
 
 
         /// <summary>
         /// adds namespace prefix to a sectoinname
         /// </summary>
-        /// <param name="section"></param>
+        /// <param name="rawSection"></param>
         /// <returns>full qualified section</returns>
-        private string normalizeSection(string section)
+        private string GetFullyQualifiedSection(string rawSection)
         {
-            return currentNamespace + "." + section;
+            return currentNamespace + "." + rawSection;
         }
         
         /// <summary>
@@ -65,7 +66,7 @@ namespace IniParser
         /// <returns>(string)value or null if not found</returns>
         public string Read(string section, string key)
         {
-            return (Data.ContainsKey(normalizeSection(section)) && Data[normalizeSection(section)].ContainsKey(key)) ? Data[normalizeSection(section)][key] : null;
+            return (Data.ContainsKey(GetFullyQualifiedSection(section)) && Data[GetFullyQualifiedSection(section)].ContainsKey(key)) ? Data[GetFullyQualifiedSection(section)][key] : null;
         }
 
         /// <summary>
@@ -77,24 +78,27 @@ namespace IniParser
         /// <returns>true on successs</returns>
         public bool Write(string section, string key, string value)
         {
+            // section must not contain square brakets
             if(-1 != section.IndexOfAny(new Char[] { '[', ']' }))
             {
                 return false;
             }
-            if (!Data.ContainsKey(normalizeSection(section)))
+
+            string fullyQualifiedSection = GetFullyQualifiedSection(section);
+            if (!Data.ContainsKey(fullyQualifiedSection))
             {
-                Data.Add(normalizeSection(section), new Dictionary<string, string>());
+                Data.Add(fullyQualifiedSection, new Dictionary<string, string>());
             }
-            if (Data[normalizeSection(section)].ContainsKey(key))
+            if (Data[fullyQualifiedSection].ContainsKey(key))
             {
-                Data[normalizeSection(section)][key] = value;
+                Data[fullyQualifiedSection][key] = value;
             }
             else
             {
-                Data[normalizeSection(section)].Add(key, value);
+                Data[fullyQualifiedSection].Add(key, value);
             }
 
-            return Data[normalizeSection(section)].ContainsKey(key);
+            return Data[fullyQualifiedSection].ContainsKey(key);
         }
 
         /// <summary>
@@ -105,15 +109,16 @@ namespace IniParser
         /// <returns>bool on success</returns>
         public bool Remove(string section, string key)
         {
+            // section must not contain square brakets
             if (-1 != section.IndexOfAny(new Char[] { '[', ']' }))
             {
                 return false;
             }
-            string FQSection = normalizeSection(section);
-            if(Data.ContainsKey(FQSection) && Data[FQSection].ContainsKey(key))
+            string fullyQualifiedSection = GetFullyQualifiedSection(section);
+            if(Data.ContainsKey(fullyQualifiedSection) && Data[fullyQualifiedSection].ContainsKey(key))
             {
-                Data[FQSection].Remove(key);
-                return !Data[FQSection].ContainsKey(key);
+                Data[fullyQualifiedSection].Remove(key);
+                return !Data[fullyQualifiedSection].ContainsKey(key);
             } else
             {
                 return false;
@@ -131,11 +136,11 @@ namespace IniParser
             {
                 return false;
             }
-            string FQSection = normalizeSection(section);
-            if (Data.ContainsKey(FQSection))
+            string fullyQualifiedSection = GetFullyQualifiedSection(section);
+            if (Data.ContainsKey(fullyQualifiedSection))
             {
-                Data.Remove(FQSection);
-                return !Data.ContainsKey(FQSection);
+                Data.Remove(fullyQualifiedSection);
+                return !Data.ContainsKey(fullyQualifiedSection);
             }
             else
             {
@@ -151,7 +156,8 @@ namespace IniParser
         /// <returns></returns>
         public Dictionary<string, string> getSection(string section)
         {
-            return Data.ContainsKey(normalizeSection(section)) ? Data[normalizeSection(section)] : null;
+            string fullyQualifiedSection = GetFullyQualifiedSection(section);
+            return Data.ContainsKey(fullyQualifiedSection) ? Data[fullyQualifiedSection] : null;
         }
 
 
@@ -166,165 +172,140 @@ namespace IniParser
 
             const string LINEBREAK = "\r\n";
 
-            public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
+            public string serialize(Dictionary<string,Dictionary<string,string>> UnserializedData, string[] MarkedIniData)
             {
-                List<string> Buffer = new List<string>();
-                string section = null;
-                foreach(string line in diff)
+                List<string> SerializedDataBuffer = new List<string>();
+                string currentSection = null;
+                foreach(string originLine in MarkedIniData)
                 {
-                    if (RgxDiffMarkerSection.IsMatch(line))
+                    if (RgxDiffMarkerSection.IsMatch(originLine))
                     {
-                        string buff_section = RgxDiffMarkerSection.Match(line).Groups[1].Value;
-                        if (section != null && !buff_section.Equals(section))
+                        string matchedSection = RgxDiffMarkerSection.Match(originLine).Groups[1].Value;
+                        if (currentSection != null && !matchedSection.Equals(currentSection))
                         {
-                            if(Data.ContainsKey(section) && Data[section].Count > 0)
+                            if(UnserializedData.ContainsKey(currentSection) && UnserializedData[currentSection].Count > 0)
                             {
-                                foreach(KeyValuePair<string, string> key in Data[section])
-                                {
-                                    Buffer.Add(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
-                                }
-                                Data.Remove(section);
+                                SerializedDataBuffer.AddRange(GetSectionItems(UnserializedData[currentSection]));
+                                UnserializedData.Remove(currentSection);
                             }
                         }
-                        section = buff_section;
-                        if (Data.ContainsKey(section))
+                        currentSection = matchedSection;
+                        if (UnserializedData.ContainsKey(currentSection))
                         {
-                            Buffer.Add(string.Format(@"[{0}]", section));
+                            SerializedDataBuffer.Add(string.Format(@"[{0}]", currentSection));
                         }
-                    } else if (RgxDiffMarkerKey.IsMatch(line))
+                    } else if (RgxDiffMarkerKey.IsMatch(originLine))
                     {
-                        string tmp_section = RgxDiffMarkerKey.Match(line).Groups[1].Value;
-                        string key = RgxDiffMarkerKey.Match(line).Groups[2].Value;
+                        System.Text.RegularExpressions.Match KeyMatch = RgxDiffMarkerKey.Match(originLine);
+                        string matchedSection = KeyMatch.Groups[1].Value;
+                        string matchedKey = KeyMatch.Groups[2].Value;
 
-                        if (tmp_section.Equals(section) && Data.ContainsKey(tmp_section) && Data[tmp_section].ContainsKey(key))
+                        if (matchedSection.Equals(currentSection) && UnserializedData.ContainsKey(matchedSection) && UnserializedData[matchedSection].ContainsKey(matchedKey))
                         {
-                            string value = Data[tmp_section][key];
-                            Buffer.Add(string.Format(@"{0}={1}", key, encapsulate(value)));
-                            Data[tmp_section].Remove(key);
-                            if(Data[tmp_section].Count <= 0)
+                            string value = UnserializedData[matchedSection][matchedKey];
+                            SerializedDataBuffer.Add(string.Format(@"{0}={1}", matchedKey, encapsulate(value)));
+                            UnserializedData[matchedSection].Remove(matchedKey);
+                            if(UnserializedData[matchedSection].Count <= 0)
                             {
-                                Data.Remove(tmp_section);
+                                UnserializedData.Remove(matchedSection);
                             }
                         }
                     } else
                     {
-                        Buffer.Add(line);
-                    }
-                }  
-                        
-                foreach(KeyValuePair<string, Dictionary<string,string>> Section in Data)
-                {
-                    Buffer.Add(string.Format(@"[{0}]", Section.Key));
-                    foreach (KeyValuePair<string,string> kvp in Section.Value)
-                    {
-                        Buffer.Add(string.Format(@"{0}=""{1}""", kvp.Key, kvp.Value));
+                        SerializedDataBuffer.Add(originLine);
                     }
                 }
-                return string.Join(LINEBREAK, Buffer.ToArray());
+                SerializedDataBuffer.AddRange(GetRemainingSections(UnserializedData));        
+                
+                return string.Join(LINEBREAK, SerializedDataBuffer.ToArray());
             }
 
-            public Dictionary<string, Dictionary<string, string>> deserialize(string serialized, out string[] diff)
+            private List<string> GetSectionItems(Dictionary<string,string> Section)
             {
-                string[] linesSource = (serialized.Trim().Length == 0)?new string[] { } : serialized.Split(new string[] { LINEBREAK }, StringSplitOptions.None);
-                List<string> serializedBuffer = new List<string>();
-                string section = null;
-                string key = null;
-                Dictionary<string, Dictionary<string, string>> Data = new Dictionary<string, Dictionary<string, string>>();
-                foreach(string currentLine in linesSource)
+                List<string> SerializedDataBuffer = new List<string>();
+                foreach (KeyValuePair<string, string> key in Section)
                 {
-                    if (isSection(currentLine))
+                    SerializedDataBuffer.Add(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
+                }
+                return SerializedDataBuffer;
+            }
+
+            private List<string> GetRemainingSections(Dictionary<string, Dictionary<string, string>> UnserializedData)
+            {
+                List<string> SerializedDataBuffer = new List<string>();
+                foreach (KeyValuePair<string, Dictionary<string, string>> Section in UnserializedData)
+                {
+                    SerializedDataBuffer.Add(string.Format(@"[{0}]", Section.Key));
+                    foreach (KeyValuePair<string, string> iniItem in Section.Value)
+                    {
+                        SerializedDataBuffer.Add(string.Format(@"{0}=""{1}""", iniItem.Key, iniItem.Value));
+                    }
+                }
+                return SerializedDataBuffer;
+            }
+
+            public Dictionary<string, Dictionary<string, string>> deserialize(string serializedIni, out string[] MarkedIniData)
+            {
+                string[] OriginIni = (serializedIni.Trim().Length == 0)?new string[] { } : serializedIni.Split(new string[] { LINEBREAK }, StringSplitOptions.None);
+                List<string> serializedBuffer = new List<string>();
+                string currentSection = null;
+                string currentKey = null;
+                Dictionary<string, Dictionary<string, string>> Data = new Dictionary<string, Dictionary<string, string>>();
+                foreach(string currentLine in OriginIni)
+                {
+                    if (RgxSection.IsMatch(currentLine))
                     {
                         // prepare section
-                        key = null;
-                        section = getSectionName(currentLine);
-                        if (!Data.ContainsKey(section))
+                        currentKey = null;
+                        currentSection = currentLine.Trim().TrimStart(new Char[] { '[' }).TrimEnd(new Char[] { ']' });
+                        if (!Data.ContainsKey(currentSection))
                         {
-                            Data.Add(section, new Dictionary<string, string>());
+                            Data.Add(currentSection, new Dictionary<string, string>());
                         }
-                        serializedBuffer.Add(getDiffMarkerSection(section));
-                    } else if (section != null 
-                        && Data.ContainsKey(section) 
-                        && isKeyValuePair(currentLine))
+                        serializedBuffer.Add(string.Format(@"---@@@SECTION::{0}@@@", currentSection));
+                    } else if (currentSection != null 
+                        && Data.ContainsKey(currentSection) 
+                        && RgxKeyValuePair.IsMatch(currentLine))
                     {
                         // add Key Value to Section
-                        int i_seperator = currentLine.IndexOf('=');
-                        key = currentLine.Substring(0, i_seperator).Trim();
-                        string val = getEncapsulated(currentLine.Substring(i_seperator + 1).Trim());
+                        int indexOfEqualSign = currentLine.IndexOf('=');
+                        currentKey = currentLine.Substring(0, indexOfEqualSign).Trim();
 
-                        if (Data[section].ContainsKey(key))
+                        if (Data[currentSection].ContainsKey(currentKey))
                         {
-                            Data[section][key] = val;
+                            Data[currentSection][currentKey] = readEncapsulated(currentLine.Substring(indexOfEqualSign + 1).Trim());
                         } else
                         {
-                            Data[section].Add(key,val);
+                            Data[currentSection].Add(currentKey, readEncapsulated(currentLine.Substring(indexOfEqualSign + 1).Trim()));
                         }
-                        serializedBuffer.Add(getDiffMarkerKey(section,key));
+                        serializedBuffer.Add(string.Format(@"---@@@KEY::[{0}]{1}@@@", currentSection, currentKey));
                     }
-                    else if (section != null 
-                        && Data.ContainsKey(section) 
-                        && key != null 
-                        && Data[section].ContainsKey(key)
-                        && isSingleValue(currentLine))
+                    else if (currentSection != null 
+                        && Data.ContainsKey(currentSection) 
+                        && currentKey != null 
+                        && Data[currentSection].ContainsKey(currentKey)
+                        && currentLine.StartsWith("="))
                     {
                         //add line to last key
-                        string val = getEncapsulated(currentLine.Trim().Substring(1));
-                        Data[section][key] = Data[section][key] + LINEBREAK + val;
+                        Data[currentSection][currentKey] = Data[currentSection][currentKey] + LINEBREAK + readEncapsulated(currentLine.Trim().Substring(1));
                     }
                     else
                     {
                         serializedBuffer.Add(currentLine);
                     }
                 }
-                diff = serializedBuffer.ToArray();
+                MarkedIniData = serializedBuffer.ToArray();
                 return Data;
             }
 
             private string encapsulate(string raw)
             {
-                if(raw.StartsWith(" ") || raw.EndsWith(" "))
-                {
-                    return "\"" + raw + "\"";
-                } else
-                {
-                    return raw;
-                }
+                return (raw.StartsWith(" ") || raw.EndsWith(" "))?"\"" + raw + "\"":raw;
             }
 
-            private string getEncapsulated(string val)
+            private string readEncapsulated(string encapsualtedValue)
             {
-                if (RgxEncapsulated.IsMatch(val))
-                {
-                    val = val.Substring(1, val.Length - 2);
-                }
-                return val;
-            }
-
-            private string getDiffMarkerSection(string section)
-            {
-                return string.Format(@"---@@@SECTION::{0}@@@", section);
-            }
-            private string getDiffMarkerKey(string section, string key)
-            {
-                return string.Format(@"---@@@KEY::[{0}]{1}@@@", section, key);
-            }
-            private string getSectionName(string line)
-            {
-                return line.Trim().TrimStart(new Char[] { '[' }).TrimEnd(new Char[] { ']' });
-            }
-
-            private bool isSingleValue(string line)
-            {
-                return line.StartsWith("=");
-            }
-
-            private bool isKeyValuePair(string line)
-            {
-                return RgxKeyValuePair.IsMatch(line);
-            }
-
-            private bool isSection(string line)
-            {
-                return RgxSection.IsMatch(line);
+                return (RgxEncapsulated.IsMatch(encapsualtedValue)) ? encapsualtedValue.Substring(1, encapsualtedValue.Length - 2) : encapsualtedValue;
             }
         }
     }
