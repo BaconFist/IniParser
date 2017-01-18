@@ -168,7 +168,6 @@ namespace IniParser
 
             public string serialize(Dictionary<string,Dictionary<string,string>> Data, string[] diff)
             {
-                //throw new NotImplementedException();
                 List<string> Buffer = new List<string>();
                 string section = null;
                 foreach(string line in diff)
