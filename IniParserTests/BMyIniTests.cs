@@ -57,9 +57,24 @@ das tut nix";
 
             Assert.IsInstanceOfType(Mock, typeof(BMyIni));
 
-            BMyIni MockC = new BMyIni(testIni_2);
-            Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockC.Read("Codes", "script 1"));
-            Assert.AreEqual("    stuff in\r\nmultiple lines", MockC.Read("Codes", "script 2"));
+            BMyIni MockB = new BMyIni(testIni_2);
+            Assert.AreEqual("class Foo {\r\n  public Foo(){\r\n    // do stuff\r\n  }\r\n}", MockB.Read("Codes", "script 1"));
+            Assert.AreEqual("    stuff in\r\nmultiple lines", MockB.Read("Codes", "script 2"));
+
+            BMyIni MockC = new BMyIni(testIni_4);
+            List<string> slug = new List<string>();
+            foreach (string section in MockC.Data.Keys)
+            {
+                slug.Add(string.Format(@"[{0}]", section));
+                foreach (KeyValuePair<string, string> Item in MockC.Data[section])
+                {
+                    slug.Add(string.Format(@"{0} => {1}", Item.Key, Item.Value));
+                }
+            }
+            Assert.IsTrue(slug[0].Equals("[GLOBAL]"));
+            Assert.IsTrue(slug[1].Equals("like => stuff"));
+            Assert.IsTrue(slug[2].Equals("[MyAwesomeScript.test]"));
+            Assert.IsTrue(slug[3].Equals("key => value derp"));
         }
 
         [TestMethod()]
