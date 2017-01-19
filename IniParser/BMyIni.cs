@@ -193,7 +193,16 @@ namespace IniParser
                 List<string> SerializedDataBuffer = new List<string>();
                 foreach (KeyValuePair<string, string> key in Section)
                 {
-                    SerializedDataBuffer.Add(string.Format(@"{0}={1}", key.Key, encapsulate(key.Value)));
+                    string[] valueLines = key.Value.Split(new String[] { LINEBREAK }, StringSplitOptions.None);
+                    SerializedDataBuffer.Add(string.Format(@"{0}={1}", key.Key, encapsulate(valueLines[0])));
+                    if (valueLines.Length > 1)
+                    {
+                        //add as multiline value
+                        for(int indexLine = 1; indexLine < valueLines.Length - 1; indexLine++)
+                        {
+                            SerializedDataBuffer.Add(string.Format(@"={1}", key.Key, encapsulate(valueLines[indexLine])));
+                        }
+                    }
                 }
                 return SerializedDataBuffer;
             }
