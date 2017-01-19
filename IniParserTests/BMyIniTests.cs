@@ -44,8 +44,10 @@ Compiler=FreePascal
 
         private string testIni_4 = @"[GLOBAL]
 pimmel
-like=stuff
-[MyAwesomeScript.test]
+like=stuff
+
+[MyAwesomeScript.test]
+
 lulilu
 key=value derp
 das tut nix";
